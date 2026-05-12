@@ -1,170 +1,282 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
-import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Heart,
+  ShoppingCart,
+  Star,
+  Eye,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/cartStore";
 import { useUserStore } from "@/store/userStore";
+import { useCartStore } from "@/store/cartStore";
+import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 import { Product } from "@/types/product";
-import { formatPrice, formatSoldCount, cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
   index?: number;
+  variant?: "default" | "compact" | "flash-sale";
 }
 
-export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  index = 0,
+  variant = "default",
+}: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  const { addItem } = useCartStore();
   const { isInWishlist, toggleWishlist } = useUserStore();
+  const { addItem } = useCartStore();
+  const { addToast } = useToast();
 
-  const inWishlist = isInWishlist(product.id);
+  const discount = product.oldPrice
+    ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
+    : 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 10;
+  const isWishlisted = isInWishlist(product.id);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product);
+
+    if (isOutOfStock) return;
+
+    setIsAddingToCart(true);
+    addItem(product, 1);
+    addToast({
+      type: "success",
+      title: "Đã thêm vào giỏ hàng",
+      message: `${product.name} - ${product.price.toLocaleString()}₫`,
+    });
+    setTimeout(() => setIsAddingToCart(false), 500);
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     toggleWishlist(product.id);
+    addToast({
+      type: isWishlisted ? "info" : "success",
+      title: isWishlisted ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích",
+      message: product.name,
+    });
   };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star
+            key={i}
+            className={cn(
+              "w-3 h-3",
+              i < Math.floor(rating)
+                ? "text-yellow-400 fill-yellow-400"
+                : i < rating
+                ? "text-yellow-400 fill-yellow-400/50"
+                : "text-gray-600"
+            )}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  if (variant === "compact") {
+    return (
+      <Link
+        href={`/product/${product.slug}`}
+        className="group flex items-center gap-3 p-2 rounded-xl hover:bg-gray-800/50 transition-colors"
+      >
+        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-800 shrink-0">
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm text-white truncate group-hover:text-red-400 transition-colors">
+            {product.name}
+          </h4>
+          <p className="text-sm font-bold text-red-400 mt-0.5">
+            {product.price.toLocaleString()}₫
+          </p>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
+      transition={{ delay: index * 0.05 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5 hover:-translate-y-1 hover:border-red-500/20"
     >
-      <Link href={`/product/${product.slug}`} className="block">
+      <Link
+        href={`/product/${product.slug}`}
+        className={cn(
+          "group block bg-gray-900/80 rounded-xl border border-gray-800/50 overflow-hidden",
+          "hover:border-gray-700/50 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-0.5",
+          "transition-all duration-300",
+          isOutOfStock && "opacity-75"
+        )}
+      >
         {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-secondary">
+        <div className="relative aspect-square overflow-hidden bg-gray-800">
           {!isImageLoaded && (
-            <div className="absolute inset-0 skeleton" />
+            <div className="absolute inset-0 bg-gray-800 animate-pulse" />
           )}
-          <Image
+          <img
             src={product.images[0]}
             alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            loading="lazy"
+            onLoad={() => setIsImageLoaded(true)}
             className={cn(
-              "object-cover transition-all duration-500 group-hover:scale-110",
+              "w-full h-full object-cover transition-all duration-500",
+              isHovered ? "scale-110" : "scale-100",
               isImageLoaded ? "opacity-100" : "opacity-0"
             )}
-            onLoad={() => setIsImageLoaded(true)}
           />
 
           {/* Overlay on hover */}
-          <motion.div
-            initial={false}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2"
+          <div
+            className={cn(
+              "absolute inset-0 bg-black/40 flex items-center justify-center gap-2 transition-opacity duration-300",
+              isHovered ? "opacity-100" : "opacity-0"
+            )}
           >
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleAddToCart}
-              className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+              disabled={isOutOfStock}
+              className={cn(
+                "p-2.5 rounded-full bg-white/90 hover:bg-white text-gray-900 transition-colors",
+                isAddingToCart && "scale-110"
+              )}
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-4 h-4" />
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+              onClick={handleToggleWishlist}
+              className={cn(
+                "p-2.5 rounded-full transition-colors",
+                isWishlisted
+                  ? "bg-red-500/90 text-white"
+                  : "bg-white/90 hover:bg-white text-gray-900"
+              )}
             >
-              <Eye className="w-5 h-5" />
+              <Heart
+                className={cn("w-4 h-4", isWishlisted && "fill-current")}
+              />
             </motion.button>
-          </motion.div>
+            <Link
+              href={`/product/${product.slug}`}
+              className="p-2.5 rounded-full bg-white/90 hover:bg-white text-gray-900 transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+            </Link>
+          </div>
 
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {product.discount && product.discount > 0 && (
-              <Badge variant="discount" className="text-xs font-bold">
-                -{product.discount}%
+            {discount > 0 && (
+              <Badge variant="flash" className="text-xs font-bold px-2 py-0.5">
+                -{discount}%
               </Badge>
             )}
             {product.isFlashSale && (
-              <Badge variant="flash" className="text-xs">
-                Flash Sale
+              <Badge
+                variant="flash"
+                className="text-xs font-bold px-2 py-0.5 animate-pulse"
+              >
+                ⚡ Flash Sale
+              </Badge>
+            )}
+            {product.featured && !product.isFlashSale && (
+              <Badge
+                variant="default"
+                className="text-xs font-bold px-2 py-0.5 bg-blue-500/90 text-white border-0"
+              >
+                🔥 Bán chạy
               </Badge>
             )}
           </div>
 
-          {/* Wishlist Button */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleWishlist}
-            className={cn(
-              "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
-              inWishlist
-                ? "bg-red-500 text-white"
-                : "bg-black/50 text-white hover:bg-red-500"
-            )}
-          >
-            <Heart
-              className={cn(
-                "w-4 h-4",
-                inWishlist && "fill-current"
-              )}
-            />
-          </motion.button>
+          {/* Stock badge */}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <span className="text-white font-bold text-sm bg-gray-900/80 px-4 py-1.5 rounded-full">
+                Hết hàng
+              </span>
+            </div>
+          )}
+          {isLowStock && !isOutOfStock && (
+            <div className="absolute bottom-2 left-2">
+              <span className="text-[10px] font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">
+                Chỉ còn {product.stock} sản phẩm
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
-        <div className="p-3 md:p-4">
+        <div className="p-3 space-y-1.5">
           {/* Product Name */}
-          <h3 className="text-sm md:text-base font-medium text-white line-clamp-2 min-h-[2.5rem] leading-tight">
+          <h3 className="text-sm font-medium text-white line-clamp-2 min-h-[2.5rem] leading-5 group-hover:text-red-400 transition-colors">
             {product.name}
           </h3>
 
-          {/* Rating & Sold */}
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex items-center gap-0.5">
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <span className="text-xs text-yellow-500 font-medium">
-                {product.rating}
-              </span>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Đã bán {formatSoldCount(product.soldCount)}
-            </span>
-          </div>
+          {/* Brand */}
+          {product.brand && (
+            <p className="text-[11px] text-gray-500">{product.brand}</p>
+          )}
 
           {/* Price */}
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-lg font-bold text-red-400">
-              {formatPrice(product.price)}
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-bold text-red-400">
+              {product.price.toLocaleString()}₫
             </span>
-            {product.oldPrice && product.oldPrice > product.price && (
-              <span className="text-xs text-muted-foreground line-through">
-                {formatPrice(product.oldPrice)}
+            {product.oldPrice && (
+              <span className="text-xs text-gray-500 line-through">
+                {product.oldPrice.toLocaleString()}₫
               </span>
             )}
           </div>
 
-          {/* Add to Cart Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleAddToCart}
-            className="w-full mt-3 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-medium hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Thêm vào giỏ
-          </motion.button>
+          {/* Rating & Sold */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {renderStars(product.rating)}
+              <span className="text-[11px] text-gray-500 ml-0.5">
+                {product.rating}
+              </span>
+            </div>
+            <span className="text-[11px] text-gray-500">
+              Đã bán {product.soldCount}
+            </span>
+          </div>
+
+          {/* Shipping badge */}
+          <div className="flex items-center gap-1 text-[10px] text-gray-500">
+            <Truck className="w-3 h-3" />
+            <span>Miễn phí vận chuyển</span>
+          </div>
         </div>
       </Link>
     </motion.div>

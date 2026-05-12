@@ -1,116 +1,65 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   Home,
   Search,
-  Heart,
   ShoppingCart,
+  Heart,
   User,
+  Store,
+  History,
 } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useUserStore } from "@/store/userStore";
-import { useUIStore } from "@/store/uiStore";
 import { cn } from "@/lib/utils";
+
+const navItems = [
+  { href: "/", label: "Trang chủ", icon: Home },
+  { href: "/search", label: "Tìm kiếm", icon: Search },
+  { href: "/flash-sale", label: "Flash Sale", icon: History },
+  { href: "/wishlist", label: "Yêu thích", icon: Heart },
+  { href: "/account", label: "Tài khoản", icon: User },
+];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { getItemCount } = useCartStore();
-  const { wishlist } = useUserStore();
-  const { toggleSearch } = useUIStore();
+  const { items } = useCartStore();
+  const { isAuthenticated } = useUserStore();
 
-  const navItems = [
-    {
-      label: "Trang chủ",
-      icon: Home,
-      href: "/",
-      badge: null,
-    },
-    {
-      label: "Tìm kiếm",
-      icon: Search,
-      href: "#",
-      onClick: toggleSearch,
-      badge: null,
-    },
-    {
-      label: "Yêu thích",
-      icon: Heart,
-      href: "/wishlist",
-      badge: wishlist.length > 0 ? wishlist.length : null,
-    },
-    {
-      label: "Giỏ hàng",
-      icon: ShoppingCart,
-      href: "#",
-      onClick: () => useCartStore.getState().toggleCart(),
-      badge: getItemCount() > 0 ? getItemCount() : null,
-    },
-    {
-      label: "Tài khoản",
-      icon: User,
-      href: "/account",
-      badge: null,
-    },
-  ];
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-16">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-gray-950/95 backdrop-blur-xl border-t border-gray-800 safe-area-bottom">
+      <div className="flex items-center justify-around px-2 py-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
           const Icon = item.icon;
-
-          const content = (
-            <div className="flex flex-col items-center gap-0.5 relative">
-              <div className="relative">
-                <Icon
-                  className={cn(
-                    "w-5 h-5 transition-colors",
-                    isActive
-                      ? "text-red-400"
-                      : "text-muted-foreground group-hover:text-white"
-                  )}
-                />
-                {item.badge && (
-                  <span className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                    {item.badge > 99 ? "99+" : item.badge}
-                  </span>
-                )}
-              </div>
-              <span
-                className={cn(
-                  "text-[10px] transition-colors",
-                  isActive
-                    ? "text-red-400 font-medium"
-                    : "text-muted-foreground"
-                )}
-              >
-                {item.label}
-              </span>
-            </div>
-          );
-
-          if (item.onClick) {
-            return (
-              <button
-                key={item.label}
-                onClick={item.onClick}
-                className="flex-1 flex items-center justify-center h-full group"
-              >
-                {content}
-              </button>
-            );
-          }
+          const isActive = pathname === item.href;
+          const isCart = item.href === "/cart";
 
           return (
             <Link
-              key={item.label}
+              key={item.href}
               href={item.href}
-              className="flex-1 flex items-center justify-center h-full group"
+              className={cn(
+                "relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors",
+                isActive
+                  ? "text-red-400"
+                  : "text-gray-500 hover:text-gray-300"
+              )}
             >
-              {content}
+              <div className="relative">
+                <Icon className="w-5 h-5" />
+                {isActive && (
+                  <motion.div
+                    layoutId="mobile-nav-indicator"
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-500"
+                  />
+                )}
+              </div>
+              <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );
         })}

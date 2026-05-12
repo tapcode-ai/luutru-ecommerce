@@ -1,13 +1,21 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { FilterOptions, SortOption } from "@/types/product";
-import { products } from "@/lib/mockData";
-import { filterProducts, getDefaultFilters } from "@/lib/searchUtils";
+import { FilterOptions, SortOption, Product } from "@/types/product";
+import { productsApi } from "@/lib/api";
+import { getDefaultFilters } from "@/lib/searchUtils";
 import ProductCard from "@/components/product/ProductCard";
 import FilterSidebar from "@/components/search/FilterSidebar";
-import { Search, SlidersHorizontal, X, Grid3X3, List, ChevronDown } from "lucide-react";
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  Grid3X3,
+  List,
+  ChevronDown,
+  Loader2,
+} from "lucide-react";
 import { SORT_OPTIONS } from "@/lib/searchUtils";
 
 function SearchContent() {
@@ -22,20 +30,75 @@ function SearchContent() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   // Update search query from URL
   useEffect(() => {
     setFilters((prev) => ({ ...prev, searchQuery: queryParam }));
   }, [queryParam]);
 
-  // Filtered results
-  const filteredProducts = useMemo(
-    () => filterProducts(products, filters),
-    [filters]
-  );
+  // Fetch products from API
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page,
+        limit: 20,
+      };
+
+      if (filters.searchQuery) params.search = filters.searchQuery;
+      if (filters.categoryId) params.category = filters.categoryId;
+      if (filters.minPrice > 0) params.minPrice = filters.minPrice;
+      if (filters.maxPrice < 100000000) params.maxPrice = filters.maxPrice;
+      if (filters.minRating > 0) params.minRating = filters.minRating;
+      if (filters.inStock) params.inStock = true;
+
+      // Map sort option to API format
+      const sortMap: Record<string, string> = {
+        popular: "popular",
+        newest: "newest",
+        "price-asc": "price_asc",
+        "price-desc": "price_desc",
+        rating: "rating",
+        "best-selling": "best_seller",
+      };
+      if (filters.sortBy && sortMap[filters.sortBy]) {
+        params.sortBy = sortMap[filters.sortBy];
+      }
+
+      const response = await productsApi.getAll(params);
+      const data = response.data || [];
+      if (page === 1) {
+        setProducts(data);
+      } else {
+        setProducts((prev) => [...prev, ...data]);
+      }
+      if (response.pagination) {
+        setTotal(response.pagination.total);
+        setHasMore(page < response.pagination.totalPages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      setProducts([]);
+    }
+    setLoading(false);
+  }, [filters, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleFilterChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
+    setPage(1);
   };
 
   const clearSearch = () => {
@@ -120,7 +183,7 @@ function SearchContent() {
                     : "Tất cả sản phẩm"}
                 </h1>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {filteredProducts.length} sản phẩm
+                  {total} sản phẩm
                 </p>
               </div>
 
@@ -174,8 +237,7 @@ function SearchContent() {
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {filters.categoryId && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-full text-xs font-medium">
-                    {products.find((p) => p.categoryId === filters.categoryId)
-                      ?.categoryId || "Danh mục"}
+                    {filters.categoryId}
                     <button
                       onClick={() =>
                         handleFilterChange({ ...filters, categoryId: null })
@@ -236,19 +298,42 @@ function SearchContent() {
               </div>
             )}
 
-            {/* Products Grid/List */}
-            {filteredProducts.length > 0 ? (
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
-                    : "space-y-3"
-                }
-              >
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+            {/* Loading State */}
+            {loading && page === 1 ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-red-500" />
               </div>
+            ) : products.length > 0 ? (
+              <>
+                {/* Products Grid/List */}
+                <div
+                  className={
+                    viewMode === "grid"
+                      ? "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                      : "space-y-3"
+                  }
+                >
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+
+                {/* Load More */}
+                {hasMore && (
+                  <div className="text-center mt-8">
+                    <button
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={loading}
+                      className="px-8 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-red-500 hover:text-red-500 transition-colors disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      ) : null}
+                      Xem thêm sản phẩm
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-20">
                 <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -295,14 +380,16 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Đang tải...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Đang tải...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <SearchContent />
     </Suspense>
   );

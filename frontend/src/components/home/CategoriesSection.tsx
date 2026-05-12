@@ -1,73 +1,99 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { motion } from "framer-motion";
 import {
   Shirt,
-  Monitor,
   Smartphone,
+  Laptop,
   Home,
   BookOpen,
-  Trophy,
-  Sparkles,
-  Grid3X3,
+  Gamepad2,
+  Watch,
+  Car,
+  Baby,
+  Dumbbell,
+  Camera,
+  Headphones,
+  ChevronRight,
 } from "lucide-react";
-import { categories } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
-const iconMap: Record<string, React.ReactNode> = {
-  Shirt: <Shirt className="w-6 h-6" />,
-  Monitor: <Monitor className="w-6 h-6" />,
-  Smartphone: <Smartphone className="w-6 h-6" />,
-  Home: <Home className="w-6 h-6" />,
-  BookOpen: <BookOpen className="w-6 h-6" />,
-  Trophy: <Trophy className="w-6 h-6" />,
-  Sparkles: <Sparkles className="w-6 h-6" />,
-};
+const categories = [
+  { id: "thoi-trang", name: "Thời Trang", icon: Shirt, color: "from-pink-500 to-rose-600" },
+  { id: "dien-thoai", name: "Điện Thoại", icon: Smartphone, color: "from-blue-500 to-indigo-600" },
+  { id: "may-tinh", name: "Máy Tính", icon: Laptop, color: "from-cyan-500 to-blue-600" },
+  { id: "dien-gia-dung", name: "Đồ Gia Dụng", icon: Home, color: "from-emerald-500 to-green-600" },
+  { id: "sach", name: "Sách", icon: BookOpen, color: "from-amber-500 to-orange-600" },
+  { id: "do-choi", name: "Đồ Chơi", icon: Gamepad2, color: "from-violet-500 to-purple-600" },
+  { id: "dong-ho", name: "Đồng Hồ", icon: Watch, color: "from-slate-500 to-gray-600" },
+  { id: "xe-may", name: "Xe Máy", icon: Car, color: "from-red-500 to-rose-600" },
+  { id: "me-be", name: "Mẹ & Bé", icon: Baby, color: "from-pink-400 to-pink-600" },
+  { id: "the-thao", name: "Thể Thao", icon: Dumbbell, color: "from-lime-500 to-green-600" },
+  { id: "may-anh", name: "Máy Ảnh", icon: Camera, color: "from-neutral-500 to-stone-600" },
+  { id: "am-thanh", name: "Âm Thanh", icon: Headphones, color: "from-fuchsia-500 to-purple-600" },
+];
 
 export default function CategoriesSection() {
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.5 }}
-      className="section-padding"
-    >
-      <div className="section-container">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="section-title">Danh mục sản phẩm</h2>
-            <p className="section-subtitle">Khám phá hàng ngàn sản phẩm</p>
-          </div>
-        </div>
+  const [showAll, setShowAll] = useState(false);
+  const displayCategories = showAll ? categories : categories.slice(0, 8);
 
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-3 md:gap-4">
-          {categories.map((category, index) => (
+  return (
+    <section>
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-gradient-to-b from-red-500 to-red-700 rounded-full" />
+          <h2 className="text-lg md:text-xl font-bold text-white">
+            Danh Mục
+          </h2>
+        </div>
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-red-400 transition-colors"
+        >
+          {showAll ? "Thu gọn" : "Xem thêm"}
+          <ChevronRight
+            className={cn(
+              "w-4 h-4 transition-transform",
+              showAll && "rotate-90"
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Categories Grid */}
+      <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
+        {displayCategories.map((category, index) => {
+          const Icon = category.icon;
+          return (
             <motion.div
               key={category.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.03 }}
             >
               <Link
-                href={`/category/${category.slug}`}
-                className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-2xl bg-card border border-border hover:border-red-500/30 hover:bg-red-500/5 transition-all duration-200 group"
+                href={`/category/${category.id}`}
+                className="group flex flex-col items-center gap-2 p-3 md:p-4 rounded-xl bg-gray-900/50 border border-gray-800/50 hover:border-gray-700/50 hover:bg-gray-800/50 transition-all duration-200"
               >
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-secondary flex items-center justify-center text-white group-hover:bg-red-500/20 group-hover:text-red-400 transition-all duration-200">
-                  {iconMap[category.icon ?? ""] || (
-                    <Grid3X3 className="w-6 h-6" />
+                <div
+                  className={cn(
+                    "w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 duration-200",
+                    category.color
                   )}
+                >
+                  <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
                 </div>
-                <span className="text-xs md:text-sm text-center text-muted-foreground group-hover:text-white transition-colors line-clamp-1">
+                <span className="text-[10px] md:text-xs text-gray-400 group-hover:text-white text-center transition-colors line-clamp-1">
                   {category.name}
                 </span>
               </Link>
             </motion.div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-    </motion.section>
+    </section>
   );
 }

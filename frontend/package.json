@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "api": "json-server --watch db.json --port 3001",
+    "dev:all": "concurrently \"npm run api\" \"npm run dev\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0",
@@ -40,6 +42,7 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.0",
+    "json-server": "^0.17.4",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.4.0"

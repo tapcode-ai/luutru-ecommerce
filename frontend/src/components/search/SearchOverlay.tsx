@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, TrendingUp, Clock, Loader2 } from "lucide-react";
-import { products } from "@/lib/mockData";
-import { filterProducts, getDefaultFilters } from "@/lib/searchUtils";
+import { productsApi } from "@/lib/api";
 import { Product } from "@/types/product";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
@@ -42,7 +41,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     }
   }, [isOpen]);
 
-  // Search with debounce
+  // Search with debounce - using API
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -50,12 +49,20 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       return;
     }
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setIsSearching(true);
-      const filters = getDefaultFilters();
-      filters.searchQuery = query;
-      const filtered = filterProducts(products, filters);
-      setResults(filtered.slice(0, 8));
+      try {
+        const response = await productsApi.getAll({
+          search: query,
+          limit: 8,
+        });
+        if (response.data) {
+          setResults(response.data);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+        setResults([]);
+      }
       setIsSearching(false);
     }, 300);
 
@@ -203,7 +210,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     onClick={() => handleSearch(query)}
                     className="w-full mt-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
                   >
-                    Xem tất cả {results.length} kết quả cho &ldquo;{query}&rdquo;
+                    Xem tất cả kết quả cho &ldquo;{query}&rdquo;
                   </button>
                 </div>
               ) : (

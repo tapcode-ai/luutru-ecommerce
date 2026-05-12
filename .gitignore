@@ -26,3 +26,15 @@ npm-debug.log*
 # Build
 dist/
 build/
+
+# Backend
+backend/node_modules/
+backend/dist/
+
+# Database
+*.sqlite
+*.sqlite3
+
+# TypeScript build info
+*.tsbuildinfo
+frontend/*.tsbuildinfo

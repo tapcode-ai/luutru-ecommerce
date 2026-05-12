@@ -7,6 +7,8 @@ import Footer from "@/components/layout/Footer";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import CartSidebar from "@/components/cart/CartSidebar";
 import AIChatbot from "@/components/chat/AIChatbot";
+import CartInitializer from "@/components/cart/CartInitializer";
+import { ToastProvider } from "@/components/ui/toast";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -28,13 +30,16 @@ export default function RootLayout({
     <html lang="vi" className="dark">
       <body className={inter.className}>
         <div className="min-h-screen bg-background text-foreground">
-          <TopHeader />
-          <NavigationBar />
-          <main>{children}</main>
-          <Footer />
-          <MobileBottomNav />
-          <CartSidebar />
-          <AIChatbot />
+          <ToastProvider>
+            <TopHeader />
+            <NavigationBar />
+            <main>{children}</main>
+            <Footer />
+            <MobileBottomNav />
+            <CartSidebar />
+            <AIChatbot />
+            <CartInitializer />
+          </ToastProvider>
         </div>
       </body>
     </html>

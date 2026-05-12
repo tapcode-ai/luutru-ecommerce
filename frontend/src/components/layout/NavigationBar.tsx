@@ -14,6 +14,7 @@ import {
   Trophy,
   Sparkles,
   Zap,
+  Settings,
 } from "lucide-react";
 import { NAVIGATION_ITEMS, CATEGORIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -118,6 +119,15 @@ export default function NavigationBar() {
 
           {/* Spacer */}
           <div className="flex-1" />
+
+          {/* Admin Link */}
+          <Link
+            href="/admin"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-secondary/50 transition-all duration-200"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Admin</span>
+          </Link>
 
           {/* Hot Deal */}
           <Link

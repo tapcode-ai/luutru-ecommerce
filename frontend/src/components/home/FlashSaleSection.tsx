@@ -1,91 +1,133 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Zap, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Zap, ChevronRight, Clock, Flame } from "lucide-react";
 import ProductCard from "@/components/product/ProductCard";
-import CountdownTimer from "@/components/shared/CountdownTimer";
 import { Product } from "@/types/product";
+import { FlashSaleSkeleton } from "@/components/ui/skeleton";
 
-interface FlashSaleSectionProps {
-  products: Product[];
-  endTime: string;
-}
+export default function FlashSaleSection() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 23,
+    minutes: 59,
+    seconds: 59,
+  });
 
-export default function FlashSaleSection({
-  products,
-  endTime,
-}: FlashSaleSectionProps) {
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:3001/products?isFlashSale=true&_limit=6"
+        );
+        const data = await res.json();
+        setProducts(data);
+      } catch (err) {
+        console.error("Failed to fetch flash sale products:", err);
+      }
+      setLoading(false);
+    };
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) {
+          return { ...prev, seconds: prev.seconds - 1 };
+        } else if (prev.minutes > 0) {
+          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+        } else if (prev.hours > 0) {
+          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        }
+        return { hours: 23, minutes: 59, seconds: 59 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (loading) return <FlashSaleSkeleton />;
+  if (products.length === 0) return null;
+
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.5 }}
-      className="section-padding"
-    >
-      <div className="section-container">
-        <div className="relative rounded-2xl bg-gradient-to-br from-red-950/50 via-red-900/20 to-background border border-red-500/20 overflow-hidden">
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl" />
-
-          <div className="relative z-10 p-4 md:p-6 lg:p-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/30">
-                  <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl md:text-2xl font-bold text-white">
-                      Flash Sale
-                    </h2>
-                    <CountdownTimer
-                      targetDate={endTime}
-                      className="hidden sm:flex"
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Kết thúc trong
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/flash-sale"
-                className="hidden sm:flex items-center gap-1 text-sm text-red-400 hover:text-red-300 transition-colors font-medium"
-              >
-                Xem tất cả
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+    <section>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-500/20">
+              <Zap className="w-4 h-4 text-white" />
             </div>
+            <h2 className="text-lg md:text-xl font-bold text-white">
+              Flash Sale
+            </h2>
+          </div>
 
-            {/* Mobile Timer */}
-            <div className="sm:hidden mb-4">
-              <CountdownTimer targetDate={endTime} />
-            </div>
-
-            {/* Products Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4">
-              {products.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
-
-            {/* Mobile View All */}
-            <div className="mt-4 text-center sm:hidden">
-              <Link
-                href="/flash-sale"
-                className="inline-flex items-center gap-1 text-sm text-red-400 font-medium"
-              >
-                Xem tất cả Flash Sale
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+          {/* Countdown Timer */}
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-red-400" />
+            <div className="flex items-center gap-1">
+              <span className="bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded min-w-[22px] text-center">
+                {String(timeLeft.hours).padStart(2, "0")}
+              </span>
+              <span className="text-red-400 text-xs font-bold">:</span>
+              <span className="bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded min-w-[22px] text-center">
+                {String(timeLeft.minutes).padStart(2, "0")}
+              </span>
+              <span className="text-red-400 text-xs font-bold">:</span>
+              <span className="bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded min-w-[22px] text-center">
+                {String(timeLeft.seconds).padStart(2, "0")}
+              </span>
             </div>
           </div>
         </div>
+
+        <Link
+          href="/flash-sale"
+          className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300 transition-colors font-medium"
+        >
+          Xem tất cả
+          <ChevronRight className="w-4 h-4" />
+        </Link>
       </div>
-    </motion.section>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {products.map((product, index) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            index={index}
+            variant="flash-sale"
+          />
+        ))}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-red-600/10 to-red-800/10 border border-red-500/20">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Flame className="w-4 h-4 text-red-400" />
+            <span className="text-xs text-red-400 font-medium">
+              Đang bán chạy
+            </span>
+          </div>
+          <span className="text-xs text-gray-400">
+            Đã bán {products.reduce((sum, p) => sum + p.soldCount, 0)} sản phẩm
+          </span>
+        </div>
+        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: "0%" }}
+            animate={{ width: "70%" }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="h-full bg-gradient-to-r from-red-600 to-red-800 rounded-full"
+          />
+        </div>
+      </div>
+    </section>
   );
 }

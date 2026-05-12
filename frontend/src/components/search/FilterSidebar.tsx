@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FilterOptions, SortOption } from "@/types/product";
 import { PRICE_RANGES, SORT_OPTIONS } from "@/lib/searchUtils";
-import { categories } from "@/lib/mockData";
-import { X, SlidersHorizontal, Star, ChevronDown, ChevronUp } from "lucide-react";
+import { productsApi } from "@/lib/api";
+import { X, SlidersHorizontal, Star, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
 interface FilterSidebarProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
   onClose?: () => void;
   isMobile?: boolean;
+}
+
+interface CategoryOption {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 export default function FilterSidebar({
@@ -27,6 +33,30 @@ export default function FilterSidebar({
     rating: true,
     sort: true,
   });
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await productsApi.getCategories();
+        if (response.data) {
+          setCategories(
+            response.data.map((cat: any) => ({
+              id: cat.slug,
+              name: cat.name,
+              slug: cat.slug,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+      setLoadingCategories(false);
+    };
+    fetchCategories();
+  }, []);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -144,19 +174,25 @@ export default function FilterSidebar({
             >
               Tất cả
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => updateFilter({ categoryId: cat.id })}
-                className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  filters.categoryId === cat.id
-                    ? "bg-red-50 dark:bg-red-900/20 text-red-600 font-medium"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
+            {loadingCategories ? (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => updateFilter({ categoryId: cat.id })}
+                  className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    filters.categoryId === cat.id
+                      ? "bg-red-50 dark:bg-red-900/20 text-red-600 font-medium"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))
+            )}
           </div>
         )}
       </div>

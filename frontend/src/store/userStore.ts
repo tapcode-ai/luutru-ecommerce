@@ -5,11 +5,12 @@ import { Product } from '@/types/product';
 
 interface UserStore {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   wishlist: string[];
   wishlistProducts: Product[];
-  setUser: (user: User | null) => void;
+  setUser: (user: User | null, token?: string | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
   toggleWishlist: (productId: string) => void;
@@ -22,14 +23,16 @@ export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
       isLoading: false,
       wishlist: [],
       wishlistProducts: [],
 
-      setUser: (user: User | null) => {
+      setUser: (user: User | null, token?: string | null) => {
         set({
           user,
+          token: token !== undefined ? token : get().token,
           isAuthenticated: !!user,
           isLoading: false,
         });
@@ -42,6 +45,7 @@ export const useUserStore = create<UserStore>()(
       logout: () => {
         set({
           user: null,
+          token: null,
           isAuthenticated: false,
           wishlist: [],
           wishlistProducts: [],
@@ -86,6 +90,7 @@ export const useUserStore = create<UserStore>()(
       name: 'luutru-user',
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
         wishlist: state.wishlist,
         wishlistProducts: state.wishlistProducts,
