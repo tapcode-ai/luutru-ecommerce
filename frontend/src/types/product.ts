@@ -14,6 +14,8 @@ export interface Product {
   isFlashSale: boolean;
   categoryId: string;
   category?: Category;
+  brand?: string;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -64,4 +66,22 @@ export interface Review {
   rating: number;
   comment: string;
   createdAt: string;
+}
+
+export interface FilterOptions {
+  searchQuery: string;
+  categoryId: string | null;
+  minPrice: number;
+  maxPrice: number;
+  minRating: number;
+  inStock: boolean;
+  sortBy: SortOption;
+}
+
+export type SortOption = 'popular' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'best-selling';
+
+export interface PriceRange {
+  label: string;
+  min: number;
+  max: number;
 }
