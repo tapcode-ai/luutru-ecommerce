@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,6 +26,13 @@ function getEstimatedDelivery(): string {
 export default function CartSidebar() {
   const { items, isOpen, setOpen, removeItem, updateQuantity, totalPrice, itemCount } =
     useCartStore();
+
+  // Listen for open-cart custom event from TopHeader
+  useEffect(() => {
+    const handleOpenCart = () => setOpen(true);
+    window.addEventListener("open-cart", handleOpenCart);
+    return () => window.removeEventListener("open-cart", handleOpenCart);
+  }, [setOpen]);
 
   const shippingFee = totalPrice >= FREE_SHIP_THRESHOLD ? 0 : SHIPPING_FEE;
   const grandTotal = totalPrice + shippingFee;
