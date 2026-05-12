@@ -26,6 +26,7 @@ import { useUserStore } from "@/store/userStore";
 import { useOrderStore } from "@/store/orderStore";
 import { SITE_NAME } from "@/lib/constants";
 import { formatPrice } from "@/lib/utils";
+import { updateUserProfile } from "@/lib/mockDataHelper";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -58,12 +59,11 @@ export default function AccountPage() {
     setSaving(true);
     setSaveMessage("");
     try {
-      const res = await fetch(`http://localhost:3001/users/${user?.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: editName, phone: editPhone }),
+      const result = updateUserProfile(user?.id || "", {
+        fullName: editName,
+        phone: editPhone,
       });
-      if (res.ok) {
+      if (result.success) {
         setSaveMessage("Cập nhật thành công!");
         setEditing(false);
         useUserStore.getState().setUser(

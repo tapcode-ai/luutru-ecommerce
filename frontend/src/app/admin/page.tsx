@@ -16,7 +16,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const API_URL = "http://localhost:3001";
+import { getProducts, getProductById, getCategories } from "@/lib/mockDataHelper";
+import { products as mockProducts } from "@/lib/mockData";
 
 interface ProductForm {
   name: string;
@@ -82,9 +83,8 @@ export default function AdminPage() {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/products`);
-      const data = await res.json();
-      setProducts(data);
+      const result = getProducts();
+      setProducts(result.data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
       showNotification("error", "Không thể tải danh sách sản phẩm");
@@ -198,18 +198,18 @@ export default function AdminPage() {
       };
 
       if (editingId) {
-        await fetch(`${API_URL}/products/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(productData),
-        });
+        // Update in mock data
+        const idx = mockProducts.findIndex((p) => p.id === editingId);
+        if (idx !== -1) {
+          Object.assign(mockProducts[idx], productData);
+        }
         showNotification("success", "Cập nhật sản phẩm thành công!");
       } else {
-        await fetch(`${API_URL}/products`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(productData),
-        });
+        const newProduct = {
+          id: String(Date.now()),
+          ...productData,
+        } as Product;
+        mockProducts.push(newProduct);
         showNotification("success", "Thêm sản phẩm thành công!");
       }
 
@@ -225,7 +225,10 @@ export default function AdminPage() {
     if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
 
     try {
-      await fetch(`${API_URL}/products/${id}`, { method: "DELETE" });
+      const idx = mockProducts.findIndex((p) => p.id === id);
+      if (idx !== -1) {
+        mockProducts.splice(idx, 1);
+      }
       showNotification("success", "Xóa sản phẩm thành công!");
       fetchProducts();
     } catch (error) {

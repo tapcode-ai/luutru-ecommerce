@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { SITE_NAME } from "@/lib/constants";
+import { registerUser } from "@/lib/mockDataHelper";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -72,44 +73,22 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      // Kiểm tra email đã tồn tại
-      const checkRes = await fetch("http://localhost:3001/users");
-      const existingUsers = await checkRes.json();
-      if (existingUsers.some((u: any) => u.email === formData.email)) {
-        throw new Error("Email này đã được đăng ký");
-      }
-
-      // Tạo user mới
-      const newUser = {
-        id: String(Date.now()),
+      const result = registerUser({
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
         phone: formData.phone,
-        avatar: "",
-        role: "user",
-        addresses: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const res = await fetch("http://localhost:3001/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newUser),
       });
 
-      if (!res.ok) throw new Error("Đăng ký thất bại");
-
-      const token = "fake-jwt-token-" + newUser.id + "-" + Date.now();
+      const { user, token } = result.data;
 
       setUser(
         {
-          id: newUser.id,
-          email: newUser.email,
-          name: newUser.fullName,
-          avatar: newUser.avatar || "",
-          createdAt: newUser.createdAt,
+          id: user.id,
+          email: user.email,
+          name: user.fullName,
+          avatar: user.avatar || "",
+          createdAt: user.createdAt,
         },
         token
       );

@@ -26,6 +26,7 @@ import ProductCard from "@/components/product/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { Product } from "@/types/product";
 import { BRAND_VALUES } from "@/lib/constants";
+import { getFeaturedProducts, getNewArrivals } from "@/lib/mockDataHelper";
 
 const stats = [
   { label: "Local Brand", value: "100+", icon: Sparkles },
@@ -63,24 +64,15 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const [featuredRes, newRes] = await Promise.all([
-          fetch("http://localhost:3001/products?featured=true&_limit=8"),
-          fetch(
-            "http://localhost:3001/products?_sort=createdAt&_order=desc&_limit=8"
-          ),
-        ]);
-        const featured = await featuredRes.json();
-        const newest = await newRes.json();
-        setFeaturedProducts(featured);
-        setNewProducts(newest);
-      } catch (err) {
-        console.error("Failed to fetch products:", err);
-      }
-      setLoading(false);
-    };
-    fetchProducts();
+    try {
+      const featured = getFeaturedProducts().data.slice(0, 8);
+      const newest = getNewArrivals(8).data;
+      setFeaturedProducts(featured);
+      setNewProducts(newest);
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+    }
+    setLoading(false);
   }, []);
 
   return (

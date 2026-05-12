@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { FilterOptions, SortOption } from "@/types/product";
 import { PRICE_RANGES, SORT_OPTIONS } from "@/lib/searchUtils";
-import { productsApi } from "@/lib/api";
+import { getCategories } from "@/lib/mockDataHelper";
 import { X, SlidersHorizontal, Star, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
 interface FilterSidebarProps {
@@ -37,25 +37,22 @@ export default function FilterSidebar({
   const [loadingCategories, setLoadingCategories] = useState(false);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      setLoadingCategories(true);
-      try {
-        const response = await productsApi.getCategories();
-        if (response.data) {
-          setCategories(
-            response.data.map((cat: any) => ({
-              id: cat.slug,
-              name: cat.name,
-              slug: cat.slug,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
+    setLoadingCategories(true);
+    try {
+      const result = getCategories();
+      if (result) {
+        setCategories(
+          result.map((cat: any) => ({
+            id: cat.slug,
+            name: cat.name,
+            slug: cat.slug,
+          }))
+        );
       }
-      setLoadingCategories(false);
-    };
-    fetchCategories();
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+    setLoadingCategories(false);
   }, []);
 
   const toggleSection = (section: string) => {

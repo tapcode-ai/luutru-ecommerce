@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FilterOptions, SortOption, Product } from "@/types/product";
-import { productsApi } from "@/lib/api";
+import { getProducts } from "@/lib/mockDataHelper";
 import { getDefaultFilters } from "@/lib/searchUtils";
 import ProductCard from "@/components/product/ProductCard";
 import FilterSidebar from "@/components/search/FilterSidebar";
@@ -41,7 +41,7 @@ function SearchContent() {
     setFilters((prev) => ({ ...prev, searchQuery: queryParam }));
   }, [queryParam]);
 
-  // Fetch products from API
+  // Fetch products from mock data
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
@@ -70,7 +70,7 @@ function SearchContent() {
         params.sortBy = sortMap[filters.sortBy];
       }
 
-      const response = await productsApi.getAll(params);
+      const response = getProducts(params);
       const data = response.data || [];
       if (page === 1) {
         setProducts(data);

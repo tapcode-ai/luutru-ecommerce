@@ -5,14 +5,14 @@ import { useUserStore } from "@/store/userStore";
 import { useCartStore } from "@/store/cartStore";
 
 export default function CartInitializer() {
-  const { isAuthenticated, token } = useUserStore();
-  const syncFromServer = useCartStore((state) => state.syncFromServer);
+  const { isAuthenticated } = useUserStore();
 
   useEffect(() => {
-    if (isAuthenticated && token) {
-      syncFromServer();
+    if (isAuthenticated) {
+      // Cart is already persisted in localStorage via zustand persist
+      // No need to sync from server since we use mock data
     }
-  }, [isAuthenticated, token, syncFromServer]);
+  }, [isAuthenticated]);
 
   return null;
 }

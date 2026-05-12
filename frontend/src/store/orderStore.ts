@@ -7,7 +7,6 @@ import { useUserStore } from './userStore';
 
 const FREE_SHIP_THRESHOLD = 500000;
 const SHIPPING_FEE = 30000;
-const API_URL = "http://localhost:3001";
 
 function generateOrderId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -80,37 +79,6 @@ export const useOrderStore = create<OrderStore>()(
           updatedAt: new Date().toISOString(),
         };
 
-        // Lưu vào json-server
-        try {
-          const orderPayload = {
-            id: orderId,
-            userId: user?.id || "guest",
-            items: items.map(item => ({
-              productId: item.productId,
-              name: item.productName,
-              price: item.price,
-              quantity: item.quantity,
-              image: item.productImage,
-            })),
-            totalAmount: total,
-            shippingAddress: `${shippingAddress.address}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}`,
-            phone: shippingAddress.phone,
-            paymentMethod,
-            status: "pending",
-            note: shippingAddress.note || "",
-            createdAt: newOrder.createdAt,
-            updatedAt: newOrder.updatedAt,
-          };
-
-          await fetch(`${API_URL}/orders`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(orderPayload),
-          });
-        } catch (err) {
-          console.error("Failed to save order to server:", err);
-        }
-
         // Tự động giảm tồn kho trong sellerStore
         const sellerStore = useSellerStore.getState();
         cartItems.forEach((cartItem) => {
@@ -164,19 +132,6 @@ export const useOrderStore = create<OrderStore>()(
             }
           });
 
-          // Đồng bộ lên json-server
-          try {
-            await fetch(`${API_URL}/orders/${orderId}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                status: "cancelled",
-                updatedAt: new Date().toISOString(),
-              }),
-            });
-          } catch (err) {
-            console.error("Failed to sync cancel order to server:", err);
-          }
         }
 
         set((state) => ({
@@ -197,47 +152,7 @@ export const useOrderStore = create<OrderStore>()(
       },
 
       fetchOrders: async () => {
-        set({ loading: true });
-        try {
-          const user = useUserStore.getState().user;
-          if (!user) return;
-          const res = await fetch(`${API_URL}/orders?userId=${user.id}`);
-          const serverOrders = await res.json();
-          
-          // Chuyển đổi từ format json-server sang format Order
-          const convertedOrders: Order[] = serverOrders.map((o: any) => ({
-            id: o.id,
-            items: (o.items || []).map((item: any) => ({
-              productId: item.productId,
-              productName: item.name || item.productName,
-              productImage: item.image || item.productImage,
-              price: item.price,
-              quantity: item.quantity,
-            })),
-            shippingAddress: {
-              fullName: o.shippingAddress?.fullName || "",
-              phone: o.phone || "",
-              address: o.shippingAddress?.address || o.shippingAddress || "",
-              city: o.shippingAddress?.city || "Hồ Chí Minh",
-              district: o.shippingAddress?.district || "",
-              ward: o.shippingAddress?.ward || "",
-              note: o.note || "",
-            },
-            paymentMethod: o.paymentMethod || "cod",
-            status: o.status || "pending",
-            subtotal: o.totalAmount || o.total || 0,
-            shippingFee: o.shippingFee || 0,
-            totalSavings: o.totalSavings || 0,
-            total: o.totalAmount || o.total || 0,
-            createdAt: o.createdAt,
-            updatedAt: o.updatedAt,
-          }));
-
-          set({ orders: convertedOrders, loading: false });
-        } catch (err) {
-          console.error("Failed to fetch orders:", err);
-          set({ loading: false });
-        }
+        set({ loading: false });
       },
     }),
     {

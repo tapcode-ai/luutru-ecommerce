@@ -7,6 +7,7 @@ import { Zap, ChevronRight, Clock, Flame } from "lucide-react";
 import ProductCard from "@/components/product/ProductCard";
 import { Product } from "@/types/product";
 import { FlashSaleSkeleton } from "@/components/ui/skeleton";
+import { getFlashSales } from "@/lib/mockDataHelper";
 
 export default function FlashSaleSection() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,19 +19,13 @@ export default function FlashSaleSection() {
   });
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:3001/products?isFlashSale=true&_limit=6"
-        );
-        const data = await res.json();
-        setProducts(data);
-      } catch (err) {
-        console.error("Failed to fetch flash sale products:", err);
-      }
-      setLoading(false);
-    };
-    fetchProducts();
+    try {
+      const result = getFlashSales();
+      setProducts(result.data.slice(0, 6));
+    } catch (err) {
+      console.error("Failed to fetch flash sale products:", err);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {

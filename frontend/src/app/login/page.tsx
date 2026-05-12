@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, LogIn, Store, Loader2, AlertCircle } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { SITE_NAME } from "@/lib/constants";
+import { loginUser } from "@/lib/mockDataHelper";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,19 +29,8 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // Gọi API login từ json-server
-      const res = await fetch("http://localhost:3001/users");
-      const users = await res.json();
-      const user = users.find(
-        (u: any) => u.email === email && u.password === password
-      );
-
-      if (!user) {
-        throw new Error("Email hoặc mật khẩu không đúng");
-      }
-
-      // Tạo token giả
-      const token = "fake-jwt-token-" + user.id + "-" + Date.now();
+      const result = loginUser(email, password);
+      const { user, token } = result.data;
 
       setUser(
         {

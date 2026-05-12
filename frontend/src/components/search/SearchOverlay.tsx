@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, TrendingUp, Clock, Loader2 } from "lucide-react";
-import { productsApi } from "@/lib/api";
 import { Product } from "@/types/product";
+import { searchProducts } from "@/lib/mockDataHelper";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 
@@ -49,16 +49,11 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       return;
     }
 
-    const timer = setTimeout(async () => {
+    const timer = setTimeout(() => {
       setIsSearching(true);
       try {
-        const response = await productsApi.getAll({
-          search: query,
-          limit: 8,
-        });
-        if (response.data) {
-          setResults(response.data);
-        }
+        const response = searchProducts(query, 8);
+        setResults(response);
       } catch (error) {
         console.error("Search error:", error);
         setResults([]);
