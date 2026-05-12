@@ -164,11 +164,8 @@ export default function TopHeader() {
             )}
 
             {/* Cart */}
-            <Link
-              href="/cart"
-              onClick={(e) => {
-                e.preventDefault();
-                // Open cart sidebar via event
+            <button
+              onClick={() => {
                 window.dispatchEvent(new CustomEvent("open-cart"));
               }}
               className="relative p-2 text-gray-400 hover:text-red-400 transition-colors"
@@ -179,7 +176,7 @@ export default function TopHeader() {
                   {cartCount > 99 ? "99+" : cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* User Menu */}
             <div className="relative" ref={userMenuRef}>
